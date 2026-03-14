@@ -1,0 +1,31 @@
+{
+  "name": "fts-project",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Webhook-driven task processing pipeline",
+  "type": "commonjs",
+  "scripts": {
+    "build": "tsc",
+    "start:api": "node dist/api/index.js",
+    "start:worker": "node dist/worker/index.js",
+    "dev:api": "nodemon --watch src --ext ts --exec ts-node src/api/index.ts",
+    "dev:worker": "nodemon --watch src --ext ts --exec ts-node src/worker/index.ts",
+    "prisma:generate": "prisma generate",
+    "prisma:migrate": "prisma migrate dev",
+    "prisma:deploy": "prisma migrate deploy",
+    "test": "echo \"No tests configured yet\" && exit 1"
+  },
+  "dependencies": {
+    "@prisma/adapter-pg": "^7.5.0",
+    "@prisma/client": "^7.5.0",
+    "pg": "^8.16.3"
+  },
+  "devDependencies": {
+    "@types/node": "^25.5.0",
+    "dotenv": "^17.2.3",
+    "nodemon": "^3.1.14",
+    "prisma": "^7.5.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.9.3"
+  }
+}
