@@ -8,12 +8,13 @@
     "build": "tsc",
     "start:api": "node dist/api/index.js",
     "start:worker": "node dist/worker/index.js",
+    "dev": "bash -lc 'trap \"kill 0\" EXIT; npm run dev:api & npm run dev:worker & wait'",
     "dev:api": "nodemon --watch src --ext ts --exec ts-node src/api/index.ts",
     "dev:worker": "nodemon --watch src --ext ts --exec ts-node src/worker/index.ts",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:deploy": "prisma migrate deploy",
-    "test": "echo \"No tests configured yet\" && exit 1"
+    "test": "TS_NODE_PROJECT=tsconfig.test.json node --require ts-node/register --test tests/**/*.test.ts"
   },
   "dependencies": {
     "@prisma/adapter-pg": "^7.5.0",

@@ -1,25 +1,79 @@
-import { createServer } from "node:http";
+import { createServer, IncomingMessage, ServerResponse } from "node:http";
 import { env } from "../config/env";
 import { closeDb, prisma } from "../db/client";
+import { prismaPipelineStore } from "../db/pipeline-store";
+import { createPipelineService } from "../services/pipeline-service";
+import { sendError, sendJson, readJsonBody, parseResourceId } from "../utils/http";
+import { parsePipelineInput } from "../utils/pipeline-validation";
 
-const server = createServer(async (req, res) => {
-  if (req.method === "GET" && req.url === "/health") {
-    try {
+const pipelineService = createPipelineService(prismaPipelineStore);
+
+export async function handleRequest(request: IncomingMessage, response: ServerResponse): Promise<void> {
+  try {
+    const requestUrl = new URL(request.url ?? "/", `http://${request.headers.host ?? "localhost"}`);
+    const { method = "GET" } = request;
+
+    if (method === "GET" && requestUrl.pathname === "/health") {
       await prisma.$queryRaw`SELECT 1`;
-      res.writeHead(200, { "content-type": "application/json" });
-      res.end(JSON.stringify({ status: "ok", database: "up" }));
-      return;
-    } catch (error) {
-      const message = error instanceof Error ? error.message : "Unknown database error";
-      res.writeHead(503, { "content-type": "application/json" });
-      res.end(JSON.stringify({ status: "degraded", database: "down", error: message }));
+      sendJson(response, 200, { data: { status: "ok", database: "up" } });
       return;
     }
-  }
 
-  res.writeHead(404, { "content-type": "application/json" });
-  res.end(JSON.stringify({ error: "Not found" }));
-});
+    if (requestUrl.pathname === "/pipelines") {
+      if (method === "GET") {
+        const pipelines = await pipelineService.listPipelines();
+        sendJson(response, 200, { data: pipelines });
+        return;
+      }
+
+      if (method === "POST") {
+        const payload = await readJsonBody(request);
+        const pipeline = await pipelineService.createPipeline(parsePipelineInput(payload));
+        sendJson(response, 201, { data: pipeline });
+        return;
+      }
+    }
+
+    const pipelineId = parseResourceId(requestUrl.pathname, "/pipelines");
+    if (pipelineId) {
+      if (method === "GET") {
+        const pipeline = await pipelineService.getPipeline(pipelineId);
+        sendJson(response, 200, { data: pipeline });
+        return;
+      }
+
+      if (method === "PUT") {
+        const payload = await readJsonBody(request);
+        const pipeline = await pipelineService.updatePipeline(pipelineId, parsePipelineInput(payload));
+        sendJson(response, 200, { data: pipeline });
+        return;
+      }
+
+      if (method === "DELETE") {
+        const pipeline = await pipelineService.deletePipeline(pipelineId);
+        sendJson(response, 200, { data: pipeline });
+        return;
+      }
+    }
+
+    sendJson(response, 404, {
+      error: {
+        code: "NOT_FOUND",
+        message: "Route not found.",
+      },
+    });
+  } catch (error) {
+    sendError(response, error);
+  }
+}
+
+export function createApiServer() {
+  return createServer((request, response) => {
+    void handleRequest(request, response);
+  });
+}
+
+const server = createApiServer();
 
 async function shutdown(signal: string): Promise<void> {
   console.log(`Received ${signal}, shutting down API server...`);
@@ -29,9 +83,11 @@ async function shutdown(signal: string): Promise<void> {
   });
 }
 
-process.on("SIGINT", () => void shutdown("SIGINT"));
-process.on("SIGTERM", () => void shutdown("SIGTERM"));
+if (require.main === module) {
+  process.on("SIGINT", () => void shutdown("SIGINT"));
+  process.on("SIGTERM", () => void shutdown("SIGTERM"));
 
-server.listen(env.port, () => {
-  console.log(`API listening on http://localhost:${env.port}`);
-});
+  server.listen(env.port, () => {
+    console.log(`API listening on http://localhost:${env.port}`);
+  });
+}
