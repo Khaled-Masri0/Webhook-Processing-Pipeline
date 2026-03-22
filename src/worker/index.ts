@@ -15,7 +15,7 @@ async function runTick(): Promise<void> {
     });
 
     if (pendingJobs > 0) {
-      console.log(`Worker heartbeat: ${pendingJobs} pending jobs ready for processing.`);
+      console.log(`Worker: ${pendingJobs} pending jobs ready for processing.`);
     }
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown worker error";
