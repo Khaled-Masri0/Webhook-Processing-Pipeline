@@ -103,7 +103,7 @@ class InMemoryPipelineStore implements PipelineStore {
 function buildInput(overrides: Partial<PipelineInput> = {}): PipelineInput {
   return {
     name: "Inbound sales lead",
-    sourcePath: "/pipelines/sales-leads",
+    sourcePath: "/webhooks/sales-leads",
     actionType: "TRANSFORM",
     actionConfig: { template: "lead-summary" },
     active: true,
@@ -127,7 +127,7 @@ test("pipeline service supports create, list, fetch, update, and delete", async 
     createdPipeline.id,
     buildInput({
       name: "Inbound support events",
-      sourcePath: "/pipelines/support-events",
+      sourcePath: "/webhooks/support-events",
       actionType: "ENRICH",
       actionConfig: { include: ["priority", "sla"] },
       subscribers: [
@@ -235,5 +235,18 @@ test("pipeline validation rejects invalid subscriber URLs", () => {
         subscribers: [{ url: "not-a-url" }],
       }),
     /valid absolute URLs/,
+  );
+});
+
+test("pipeline validation rejects reserved API source paths", () => {
+  assert.throws(
+    () =>
+      parsePipelineInput({
+        name: "Alerts",
+        sourcePath: "/pipelines/alerts",
+        actionType: "FILTER",
+        subscribers: [{ url: "https://example.com/hooks/alerts" }],
+      }),
+    /reserved API path/,
   );
 });

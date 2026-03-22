@@ -1,9 +1,12 @@
 import { ActionType } from "@prisma/client";
 import { ValidationError } from "./errors";
+import { isJsonObject } from "./json";
 import { PipelineInput, PipelineSubscriberInput } from "../services/pipeline-service";
 
 const VALID_ACTION_TYPES = new Set<ActionType>(["TRANSFORM", "FILTER", "ENRICH"]);
 const VALID_SOURCE_PATH = /^\/[a-zA-Z0-9/_-]+$/;
+const RESERVED_SOURCE_PATH_PREFIXES = ["/pipelines"];
+const RESERVED_SOURCE_PATHS = new Set(["/health"]);
 
 export function parsePipelineInput(payload: unknown): PipelineInput {
   const input = asObject(payload, "Request body must be a JSON object.");
@@ -85,7 +88,18 @@ function normalizeSourcePath(value: string): string {
     throw new ValidationError("sourcePath must not be the root path.");
   }
 
-  return trimmedValue.endsWith("/") ? trimmedValue.slice(0, -1) : trimmedValue;
+  const normalizedValue = trimmedValue.endsWith("/") ? trimmedValue.slice(0, -1) : trimmedValue;
+
+  if (
+    RESERVED_SOURCE_PATHS.has(normalizedValue) ||
+    RESERVED_SOURCE_PATH_PREFIXES.some(
+      (prefix) => normalizedValue === prefix || normalizedValue.startsWith(`${prefix}/`),
+    )
+  ) {
+    throw new ValidationError("sourcePath uses a reserved API path.");
+  }
+
+  return normalizedValue;
 }
 
 function requireString(value: unknown, fieldName: string): string {
@@ -109,13 +123,9 @@ function parseOptionalBoolean(value: unknown, defaultValue: boolean): boolean {
 }
 
 function asObject(value: unknown, message: string): Record<string, unknown> {
-  if (!isPlainObject(value)) {
+  if (!isJsonObject(value)) {
     throw new ValidationError(message);
   }
 
   return value;
-}
-
-function isPlainObject(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
 }
