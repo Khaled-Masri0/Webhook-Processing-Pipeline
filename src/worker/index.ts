@@ -1,10 +1,16 @@
 import { env } from "../config/env";
 import { closeDb } from "../db/client";
 import { prismaJobStore } from "../db/job-store";
+import { prismaPipelineStore } from "../db/pipeline-store";
 import { createJobProcessingService } from "../services/job-processing-service";
+import {
+  createSubscriberDeliveryService,
+  shouldDeliverProcessedJob,
+} from "../services/subscriber-delivery-service";
 
 let timer: NodeJS.Timeout | null = null;
 const jobProcessingService = createJobProcessingService(prismaJobStore);
+const subscriberDeliveryService = createSubscriberDeliveryService(prismaPipelineStore, prismaJobStore);
 
 async function runTick(): Promise<void> {
   try {
@@ -18,6 +24,20 @@ async function runTick(): Promise<void> {
         console.log(
           `Worker completed job ${processedJob.jobId} for pipeline ${processedJob.pipelineId} with action status ${processedJob.actionStatus}.`,
         );
+
+        if (shouldDeliverProcessedJob(processedJob)) {
+          const deliverySummary = await subscriberDeliveryService.deliverJobResult({
+            jobId: processedJob.jobId,
+            pipelineId: processedJob.pipelineId,
+            payload: processedJob.result,
+          });
+
+          console.log(
+            `Worker delivered job ${deliverySummary.jobId} to ${deliverySummary.totalSubscribers} subscribers (${deliverySummary.deliveredCount} succeeded, ${deliverySummary.failedCount} failed).`,
+          );
+        } else {
+          console.log(`Worker skipped subscriber delivery for job ${processedJob.jobId}.`);
+        }
       } else if (processedJob.status === "RETRY_SCHEDULED") {
         console.warn(
           `Worker rescheduled job ${processedJob.jobId} for pipeline ${processedJob.pipelineId} as retry ${processedJob.retryCount} at ${processedJob.nextRunAt.toISOString()}: ${processedJob.lastError}`,
@@ -27,6 +47,22 @@ async function runTick(): Promise<void> {
           `Worker failed job ${processedJob.jobId} for pipeline ${processedJob.pipelineId}: ${processedJob.lastError}`,
         );
       }
+    }
+
+    const deliveryRetry = await subscriberDeliveryService.processNextDeliveryRetry();
+
+    if (deliveryRetry?.status === "SUCCESS") {
+      console.log(
+        `Worker delivered retry attempt ${deliveryRetry.attemptNumber} for job ${deliveryRetry.jobId} to subscriber ${deliveryRetry.subscriberId}.`,
+      );
+    } else if (deliveryRetry?.status === "RETRY_SCHEDULED") {
+      console.warn(
+        `Worker rescheduled delivery retry after attempt ${deliveryRetry.attemptNumber} for job ${deliveryRetry.jobId} to subscriber ${deliveryRetry.subscriberId} at ${deliveryRetry.nextRunAt.toISOString()}: ${deliveryRetry.lastError}`,
+      );
+    } else if (deliveryRetry?.status === "FAILED") {
+      console.error(
+        `Worker exhausted delivery retries at attempt ${deliveryRetry.attemptNumber} for job ${deliveryRetry.jobId} to subscriber ${deliveryRetry.subscriberId}: ${deliveryRetry.lastError}`,
+      );
     }
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown worker error";

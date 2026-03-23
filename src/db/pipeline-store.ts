@@ -2,6 +2,7 @@ import { Pipeline as PrismaPipeline, Prisma, Subscriber as PrismaSubscriber } fr
 import { prisma } from "./client";
 import { ConflictError } from "../utils/errors";
 import { Pipeline, PipelineInput, PipelineStore } from "../services/pipeline-service";
+import { DeliverySubscriber, DeliverySubscriberStore } from "../services/subscriber-delivery-service";
 import { WebhookPipeline, WebhookPipelineStore } from "../services/webhook-service";
 
 type PipelineRecord = PrismaPipeline & { subscribers: PrismaSubscriber[] };
@@ -14,7 +15,7 @@ const pipelineInclude = {
   },
 } satisfies Prisma.PipelineInclude;
 
-class PrismaPipelineStore implements PipelineStore, WebhookPipelineStore {
+class PrismaPipelineStore implements PipelineStore, WebhookPipelineStore, DeliverySubscriberStore {
   async list(): Promise<Pipeline[]> {
     const pipelines = await prisma.pipeline.findMany({
       include: pipelineInclude,
@@ -49,6 +50,23 @@ class PrismaPipelineStore implements PipelineStore, WebhookPipelineStore {
       sourcePath: pipeline.sourcePath,
       active: pipeline.active,
     };
+  }
+
+  async listActiveSubscribers(pipelineId: string): Promise<DeliverySubscriber[]> {
+    const subscribers = await prisma.subscriber.findMany({
+      where: {
+        pipelineId,
+        active: true,
+      },
+      orderBy: {
+        createdAt: "asc",
+      },
+    });
+
+    return subscribers.map((subscriber) => ({
+      id: subscriber.id,
+      url: subscriber.url,
+    }));
   }
 
   async create(input: PipelineInput): Promise<Pipeline> {
