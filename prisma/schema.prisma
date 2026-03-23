@@ -84,11 +84,14 @@ model DeliveryAttempt {
   subscriber    Subscriber     @relation(fields: [subscriberId], references: [id], onDelete: Cascade)
   attemptNumber Int
   status        DeliveryStatus @default(PENDING)
+  nextRunAt     DateTime       @default(now())
+  lockedAt      DateTime?
   responseCode  Int?
   error         String?
   deliveredAt   DateTime?
   createdAt     DateTime       @default(now())
 
+  @@index([status, nextRunAt])
   @@index([jobId, status])
   @@index([subscriberId, createdAt])
   @@map("delivery_attempts")

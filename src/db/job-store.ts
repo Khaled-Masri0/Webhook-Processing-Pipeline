@@ -1,10 +1,15 @@
-import { JobStatus, Prisma } from "@prisma/client";
+import { DeliveryStatus, JobStatus, Prisma } from "@prisma/client";
 import { prisma } from "./client";
+import {
+  DeliveryAttemptInput,
+  DeliveryAttemptStore,
+  PendingDeliveryAttempt,
+} from "../services/subscriber-delivery-service";
 import { EnqueueJobInput, JobStore, QueuedJob } from "../services/webhook-service";
 import { JobProcessingStore, ReadyJob } from "../services/job-processing-service";
 import { JsonValue } from "../utils/json";
 
-class PrismaJobStore implements JobStore, JobProcessingStore {
+class PrismaJobStore implements JobStore, JobProcessingStore, DeliveryAttemptStore {
   async create(input: EnqueueJobInput): Promise<QueuedJob> {
     const job = await prisma.job.create({
       data: {
@@ -129,6 +134,127 @@ class PrismaJobStore implements JobStore, JobProcessingStore {
         processedAt: null,
         lockedAt: null,
         lastError,
+      },
+    });
+
+    return update.count === 1;
+  }
+
+  async createDeliveryAttempt(input: DeliveryAttemptInput): Promise<void> {
+    await prisma.deliveryAttempt.create({
+      data: {
+        jobId: input.jobId,
+        subscriberId: input.subscriberId,
+        attemptNumber: input.attemptNumber,
+        status: input.status,
+        nextRunAt: input.nextRunAt,
+        responseCode: input.responseCode,
+        error: input.error,
+        deliveredAt: input.deliveredAt,
+      },
+    });
+  }
+
+  async findNextPendingDeliveryAttempt(now: Date): Promise<PendingDeliveryAttempt | null> {
+    const attempt = await prisma.deliveryAttempt.findFirst({
+      where: {
+        status: DeliveryStatus.PENDING,
+        lockedAt: null,
+        nextRunAt: {
+          lte: now,
+        },
+      },
+      orderBy: [{ nextRunAt: "asc" }, { createdAt: "asc" }],
+      include: {
+        subscriber: {
+          select: {
+            url: true,
+            active: true,
+          },
+        },
+        job: {
+          select: {
+            pipelineId: true,
+            result: true,
+          },
+        },
+      },
+    });
+
+    if (!attempt) {
+      return null;
+    }
+
+    return {
+      id: attempt.id,
+      jobId: attempt.jobId,
+      pipelineId: attempt.job.pipelineId,
+      subscriberId: attempt.subscriberId,
+      subscriberUrl: attempt.subscriber.url,
+      subscriberActive: attempt.subscriber.active,
+      attemptNumber: attempt.attemptNumber,
+      payload: attempt.job.result as JsonValue | null,
+      nextRunAt: attempt.nextRunAt,
+      createdAt: attempt.createdAt,
+    };
+  }
+
+  async markDeliveryAttemptLocked(attemptId: string, lockedAt: Date): Promise<boolean> {
+    const update = await prisma.deliveryAttempt.updateMany({
+      where: {
+        id: attemptId,
+        status: DeliveryStatus.PENDING,
+        lockedAt: null,
+        nextRunAt: {
+          lte: lockedAt,
+        },
+      },
+      data: {
+        lockedAt,
+      },
+    });
+
+    return update.count === 1;
+  }
+
+  async markDeliveryAttemptSucceeded(
+    attemptId: string,
+    responseCode: number,
+    deliveredAt: Date,
+  ): Promise<boolean> {
+    const update = await prisma.deliveryAttempt.updateMany({
+      where: {
+        id: attemptId,
+        status: DeliveryStatus.PENDING,
+      },
+      data: {
+        status: DeliveryStatus.SUCCESS,
+        responseCode,
+        error: null,
+        deliveredAt,
+        lockedAt: null,
+      },
+    });
+
+    return update.count === 1;
+  }
+
+  async markDeliveryAttemptFailed(
+    attemptId: string,
+    error: string,
+    responseCode?: number,
+  ): Promise<boolean> {
+    const update = await prisma.deliveryAttempt.updateMany({
+      where: {
+        id: attemptId,
+        status: DeliveryStatus.PENDING,
+      },
+      data: {
+        status: DeliveryStatus.FAILED,
+        responseCode,
+        error,
+        deliveredAt: null,
+        lockedAt: null,
       },
     });
 
