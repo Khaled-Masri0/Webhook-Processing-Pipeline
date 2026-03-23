@@ -1,21 +1,32 @@
 import { env } from "../config/env";
-import { closeDb, prisma } from "../db/client";
+import { closeDb } from "../db/client";
+import { prismaJobStore } from "../db/job-store";
+import { createJobProcessingService } from "../services/job-processing-service";
 
 let timer: NodeJS.Timeout | null = null;
+const jobProcessingService = createJobProcessingService(prismaJobStore);
 
 async function runTick(): Promise<void> {
   try {
-    const pendingJobs = await prisma.job.count({
-      where: {
-        status: "PENDING",
-        nextRunAt: {
-          lte: new Date(),
-        },
-      },
-    });
+    const claimedJob = await jobProcessingService.claimNextReadyJob();
 
-    if (pendingJobs > 0) {
-      console.log(`Worker: ${pendingJobs} pending jobs ready for processing.`);
+    if (claimedJob) {
+      console.log(`Worker claimed job ${claimedJob.id} for pipeline ${claimedJob.pipelineId}.`);
+      const processedJob = await jobProcessingService.processClaimedJob(claimedJob);
+
+      if (processedJob.status === "COMPLETED") {
+        console.log(
+          `Worker completed job ${processedJob.jobId} for pipeline ${processedJob.pipelineId} with action status ${processedJob.actionStatus}.`,
+        );
+      } else if (processedJob.status === "RETRY_SCHEDULED") {
+        console.warn(
+          `Worker rescheduled job ${processedJob.jobId} for pipeline ${processedJob.pipelineId} as retry ${processedJob.retryCount} at ${processedJob.nextRunAt.toISOString()}: ${processedJob.lastError}`,
+        );
+      } else {
+        console.error(
+          `Worker failed job ${processedJob.jobId} for pipeline ${processedJob.pipelineId}: ${processedJob.lastError}`,
+        );
+      }
     }
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown worker error";

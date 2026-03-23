@@ -1,6 +1,7 @@
 import { ActionType } from "@prisma/client";
 import { ValidationError } from "./errors";
 import { isJsonObject } from "./json";
+import { parsePipelineActionConfig } from "../services/pipeline-action-service";
 import { PipelineInput, PipelineSubscriberInput } from "../services/pipeline-service";
 
 const VALID_ACTION_TYPES = new Set<ActionType>(["TRANSFORM", "FILTER", "ENRICH"]);
@@ -11,12 +12,13 @@ const RESERVED_SOURCE_PATHS = new Set(["/health"]);
 export function parsePipelineInput(payload: unknown): PipelineInput {
   const input = asObject(payload, "Request body must be a JSON object.");
   const subscribers = parseSubscribers(input.subscribers);
+  const actionType = parseActionType(input.actionType);
 
   return {
     name: requireString(input.name, "name"),
     sourcePath: normalizeSourcePath(requireString(input.sourcePath, "sourcePath")),
-    actionType: parseActionType(input.actionType),
-    actionConfig: parseActionConfig(input.actionConfig),
+    actionType,
+    actionConfig: parsePipelineActionConfig(actionType, input.actionConfig ?? {}) as unknown as Record<string, unknown>,
     active: parseOptionalBoolean(input.active, true),
     subscribers,
   };
@@ -49,14 +51,6 @@ function parseActionType(value: unknown): ActionType {
   }
 
   return value as ActionType;
-}
-
-function parseActionConfig(value: unknown): Record<string, unknown> {
-  if (value === undefined) {
-    return {};
-  }
-
-  return asObject(value, "actionConfig must be a JSON object.");
 }
 
 function parseSubscriberUrl(value: string): string {
