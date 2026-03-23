@@ -105,7 +105,13 @@ function buildInput(overrides: Partial<PipelineInput> = {}): PipelineInput {
     name: "Inbound sales lead",
     sourcePath: "/webhooks/sales-leads",
     actionType: "TRANSFORM",
-    actionConfig: { template: "lead-summary" },
+    actionConfig: {
+      fields: {
+        leadId: "leadId",
+        email: "contact.email",
+        amount: "amount",
+      },
+    },
     active: true,
     subscribers: [
       {
@@ -129,7 +135,12 @@ test("pipeline service supports create, list, fetch, update, and delete", async 
       name: "Inbound support events",
       sourcePath: "/webhooks/support-events",
       actionType: "ENRICH",
-      actionConfig: { include: ["priority", "sla"] },
+      actionConfig: {
+        add: {
+          priority: "high",
+          slaHours: 4,
+        },
+      },
       subscribers: [
         {
           url: "https://example.com/hooks/support",
@@ -182,17 +193,23 @@ test("pipeline service returns not found on update and delete for missing record
   );
 });
 
-test("pipeline validation normalizes sourcePath and applies defaults", () => {
+test("pipeline validation normalizes sourcePath and applies filter defaults", () => {
   const input = parsePipelineInput({
     name: "Alerts",
     sourcePath: "/alerts/critical/",
     actionType: "FILTER",
+    actionConfig: {
+      conditions: [{ path: "severity", operator: "equals", value: "critical" }],
+    },
     subscribers: [{ url: "https://example.com/hooks/alerts" }],
   });
 
   assert.equal(input.sourcePath, "/alerts/critical");
   assert.equal(input.active, true);
-  assert.deepEqual(input.actionConfig, {});
+  assert.deepEqual(input.actionConfig, {
+    match: "all",
+    conditions: [{ path: "severity", operator: "equals", value: "critical" }],
+  });
   assert.equal(input.subscribers[0]?.active, true);
 });
 
@@ -203,6 +220,9 @@ test("pipeline validation rejects duplicate subscribers", () => {
         name: "Alerts",
         sourcePath: "/alerts/critical",
         actionType: "FILTER",
+        actionConfig: {
+          conditions: [{ path: "severity", operator: "equals", value: "critical" }],
+        },
         subscribers: [
           { url: "https://example.com/hooks/alerts" },
           { url: "https://example.com/hooks/alerts" },
@@ -219,6 +239,9 @@ test("pipeline validation rejects invalid action types", () => {
         name: "Alerts",
         sourcePath: "/alerts/critical",
         actionType: "INVALID",
+        actionConfig: {
+          conditions: [{ path: "severity", operator: "equals", value: "critical" }],
+        },
         subscribers: [{ url: "https://example.com/hooks/alerts" }],
       }),
     /actionType must be one of TRANSFORM, FILTER, or ENRICH/,
@@ -232,6 +255,9 @@ test("pipeline validation rejects invalid subscriber URLs", () => {
         name: "Alerts",
         sourcePath: "/alerts/critical",
         actionType: "FILTER",
+        actionConfig: {
+          conditions: [{ path: "severity", operator: "equals", value: "critical" }],
+        },
         subscribers: [{ url: "not-a-url" }],
       }),
     /valid absolute URLs/,
@@ -245,8 +271,59 @@ test("pipeline validation rejects reserved API source paths", () => {
         name: "Alerts",
         sourcePath: "/pipelines/alerts",
         actionType: "FILTER",
+        actionConfig: {
+          conditions: [{ path: "severity", operator: "equals", value: "critical" }],
+        },
         subscribers: [{ url: "https://example.com/hooks/alerts" }],
       }),
     /reserved API path/,
+  );
+});
+
+test("pipeline validation rejects invalid actionConfig for TRANSFORM", () => {
+  assert.throws(
+    () =>
+      parsePipelineInput({
+        name: "Alerts",
+        sourcePath: "/alerts/critical",
+        actionType: "TRANSFORM",
+        actionConfig: {
+          fields: {},
+        },
+        subscribers: [{ url: "https://example.com/hooks/alerts" }],
+      }),
+    /must define at least one output field/,
+  );
+});
+
+test("pipeline validation rejects invalid actionConfig for FILTER", () => {
+  assert.throws(
+    () =>
+      parsePipelineInput({
+        name: "Alerts",
+        sourcePath: "/alerts/critical",
+        actionType: "FILTER",
+        actionConfig: {
+          conditions: [{ path: "amount", operator: "gt", value: "100" }],
+        },
+        subscribers: [{ url: "https://example.com/hooks/alerts" }],
+      }),
+    /must be a number for numeric operators/,
+  );
+});
+
+test("pipeline validation rejects invalid actionConfig for ENRICH", () => {
+  assert.throws(
+    () =>
+      parsePipelineInput({
+        name: "Alerts",
+        sourcePath: "/alerts/critical",
+        actionType: "ENRICH",
+        actionConfig: {
+          add: {},
+        },
+        subscribers: [{ url: "https://example.com/hooks/alerts" }],
+      }),
+    /must define at least one field/,
   );
 });
