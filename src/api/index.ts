@@ -1,4 +1,3 @@
-import { createServer } from "node:http";
 import { pathToFileURL } from "node:url";
 import { env } from "../config/env.js";
 import { closeDb } from "../db/client.js";
@@ -6,29 +5,34 @@ import { createApiApp } from "./app.js";
 import { createDefaultApiDependencies } from "./default-dependencies.js";
 
 export function createApiServer() {
-    const dependencies = createDefaultApiDependencies();
-    const app = createApiApp(dependencies);
-    return createServer(app);
-  }
+  const dependencies = createDefaultApiDependencies();
+  const app = createApiApp(dependencies);
+  return app;
+}
 
-const server = createApiServer();
+const app = createApiServer();
+let server: ReturnType<typeof app.listen> | null = null;
 
 async function shutdown(signal: string): Promise<void> {
   console.log(`Received ${signal}, shutting down API server...`);
+  if (!server) {
+    await closeDb();
+    process.exit(0);
+  }
+
   server.close(async () => {
     await closeDb();
     process.exit(0);
   });
 }
 
-const isDirectExecution =
-  process.argv[1] !== undefined && import.meta.url === pathToFileURL(process.argv[1]).href;
+const isDirectExecution = process.argv[1] !== undefined && import.meta.url === pathToFileURL(process.argv[1]).href;
 
 if (isDirectExecution) {
   process.on("SIGINT", () => void shutdown("SIGINT"));
   process.on("SIGTERM", () => void shutdown("SIGTERM"));
 
-  server.listen(env.port, () => {
+  server = app.listen(env.port, () => {
     console.log(`API listening on http://localhost:${env.port}`);
   });
 }

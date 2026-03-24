@@ -45,7 +45,7 @@ function buildJobSummary(): JobSummary {
   return {
     id: "job-123",
     pipelineId: "pipeline-123",
-    pipelineName: "Sales Lead Pipeline",
+    pipelineName: "Order Events Pipeline",
     status: JobStatus.COMPLETED,
     retryCount: 0,
     maxRetries: 5,
@@ -61,9 +61,9 @@ function buildJobSummary(): JobSummary {
 function buildJobDetails(): JobDetails {
   return {
     ...buildJobSummary(),
-    payload: { leadId: "lead-123" },
-    result: { leadId: "lead-123", priority: "high" },
-    pipelineSourcePath: "/webhooks/sales-leads",
+    payload: { eventId: "evt-123", total: 149 },
+    result: { eventId: "evt-123", priority: "high" },
+    pipelineSourcePath: "/webhooks/order-events",
     actionType: "ENRICH",
     pipelineActive: true,
   };
@@ -74,7 +74,7 @@ function buildDeliveryAttemptDetails(): DeliveryAttemptDetails {
     id: "attempt-123",
     jobId: "job-123",
     subscriberId: "subscriber-123",
-    subscriberUrl: "https://example.com/hooks/sales",
+    subscriberUrl: "https://example.com/hooks/orders",
     attemptNumber: 2,
     status: DeliveryStatus.FAILED,
     nextRunAt: new Date("2026-03-24T10:02:00.000Z"),
@@ -109,7 +109,7 @@ test("job query service returns a job by id", async () => {
   const job = await service.getJob("job-123");
 
   assert.equal(job.id, "job-123");
-  assert.equal(job.pipelineSourcePath, "/webhooks/sales-leads");
+  assert.equal(job.pipelineSourcePath, "/webhooks/order-events");
 });
 
 test("job query service throws when a job is missing", async () => {

@@ -12,19 +12,19 @@ import { JsonValue } from "../../src/utils/json.js";
 function createPipelineServiceStub(): PipelineService {
   return {
     async listPipelines() {
-      throw new Error("Not implemented in this test.");
+      throw new Error("Unexpected call in this test.");
     },
     async getPipeline() {
-      throw new Error("Not implemented in this test.");
+      throw new Error("Unexpected call in this test.");
     },
     async createPipeline() {
-      throw new Error("Not implemented in this test.");
+      throw new Error("Unexpected call in this test.");
     },
     async updatePipeline() {
-      throw new Error("Not implemented in this test.");
+      throw new Error("Unexpected call in this test.");
     },
     async deletePipeline() {
-      throw new Error("Not implemented in this test.");
+      throw new Error("Unexpected call in this test.");
     },
   };
 }
@@ -32,13 +32,13 @@ function createPipelineServiceStub(): PipelineService {
 function createJobQueryServiceStub(): JobQueryService {
   return {
     async getJob() {
-      throw new Error("Not implemented in this test.");
+      throw new Error("Unexpected call in this test.");
     },
     async listJobs() {
-      throw new Error("Not implemented in this test.");
+      throw new Error("Unexpected call in this test.");
     },
     async listJobDeliveries() {
-      throw new Error("Not implemented in this test.");
+      throw new Error("Unexpected call in this test.");
     },
   };
 }
@@ -99,7 +99,7 @@ test("webhook route enqueues jobs and returns 202", async () => {
       jobQueryService: createJobQueryServiceStub(),
       webhookService: {
         async enqueueWebhook(sourcePath: string, payload: JsonValue): Promise<QueuedJob> {
-          assert.equal(sourcePath, "/webhooks/sales-leads");
+          assert.equal(sourcePath, "/webhooks/order-events");
           observedPayloads.push(payload);
           return buildQueuedJob();
         },
@@ -107,18 +107,22 @@ test("webhook route enqueues jobs and returns 202", async () => {
       healthcheck: async () => undefined,
     },
     async (baseUrl) => {
-      const response = await fetch(`${baseUrl}/webhooks/sales-leads`, {
+      const response = await fetch(`${baseUrl}/webhooks/order-events`, {
         method: "POST",
         headers: {
           "content-type": "application/json",
         },
-        body: JSON.stringify({ leadId: "lead-123" }),
+        body: JSON.stringify({ eventId: "evt-123", total: 149, source: "web-form" }),
       });
 
       const body = await response.text();
 
       assert.equal(response.status, 202);
-      assert.deepEqual(observedPayloads[0], { leadId: "lead-123" });
+      assert.deepEqual(observedPayloads[0], {
+        eventId: "evt-123",
+        total: 149,
+        source: "web-form",
+      });
       assert.match(body, /job-123/);
     },
   );
@@ -166,7 +170,7 @@ test("webhook route rejects empty request bodies", async () => {
       healthcheck: async () => undefined,
     },
     async (baseUrl) => {
-      const response = await fetch(`${baseUrl}/webhooks/sales-leads`, {
+      const response = await fetch(`${baseUrl}/webhooks/order-events`, {
         method: "POST",
       });
 

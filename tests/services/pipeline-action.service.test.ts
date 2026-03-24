@@ -11,24 +11,24 @@ test("transform action reshapes payload fields into a new object", () => {
     actionType: "TRANSFORM",
     actionConfig: {
       fields: {
-        leadId: "lead.id",
-        email: "contact.email",
-        amount: "amount",
-        missing: "contact.phone",
+        eventId: "event.id",
+        customerEmail: "customer.email",
+        total: "total",
+        missing: "customer.phone",
       },
     },
     payload: {
-      lead: { id: "lead-123" },
-      contact: { email: "owner@example.com" },
-      amount: 42,
+      event: { id: "evt-123" },
+      customer: { email: "user@example.com" },
+      total: 42,
     },
   });
 
   assert.equal(result.status, "SUCCESS");
   assert.deepEqual(result.result, {
-    leadId: "lead-123",
-    email: "owner@example.com",
-    amount: 42,
+    eventId: "evt-123",
+    customerEmail: "user@example.com",
+    total: 42,
     missing: null,
   });
 });
@@ -38,13 +38,13 @@ test("filter action returns filtered out when all conditions do not match", () =
     actionType: "FILTER",
     actionConfig: {
       conditions: [
-        { path: "amount", operator: "gt", value: 100 },
-        { path: "contact.email", operator: "exists" },
+        { path: "total", operator: "gt", value: 100 },
+        { path: "customer.email", operator: "exists" },
       ],
     },
     payload: {
-      amount: 42,
-      contact: { email: "owner@example.com" },
+      total: 42,
+      customer: { email: "user@example.com" },
     },
   });
 
@@ -58,19 +58,19 @@ test("filter action supports any-match evaluation", () => {
     actionConfig: {
       match: "any",
       conditions: [
-        { path: "amount", operator: "gt", value: 100 },
+        { path: "total", operator: "gt", value: 100 },
         { path: "priority", operator: "equals", value: "high" },
       ],
     },
     payload: {
-      amount: 42,
+      total: 42,
       priority: "high",
     },
   });
 
   assert.equal(result.status, "SUCCESS");
   assert.deepEqual(result.result, {
-    amount: 42,
+    total: 42,
     priority: "high",
   });
 });
@@ -81,21 +81,21 @@ test("enrich action merges configured fields into the payload", () => {
     actionConfig: {
       add: {
         priority: "high",
-        tags: ["sales", "vip"],
+        tags: ["orders", "vip"],
       },
     },
     payload: {
-      leadId: "lead-123",
-      amount: 42,
+      eventId: "evt-123",
+      total: 42,
     },
   });
 
   assert.equal(result.status, "SUCCESS");
   assert.deepEqual(result.result, {
-    leadId: "lead-123",
-    amount: 42,
+    eventId: "evt-123",
+    total: 42,
     priority: "high",
-    tags: ["sales", "vip"],
+    tags: ["orders", "vip"],
   });
 });
 
@@ -118,7 +118,7 @@ test("action execution rejects non-object payloads for transform and enrich", ()
         actionType: "TRANSFORM",
         actionConfig: {
           fields: {
-            value: "amount",
+            value: "total",
           },
         },
         payload: 42,

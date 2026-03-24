@@ -44,34 +44,34 @@ class InMemoryJobStore implements JobStore {
 
 test("webhook service enqueues a pending job for an active pipeline", async () => {
   const pipelineStore = new InMemoryWebhookPipelineStore([
-    { id: "pipeline-1", sourcePath: "/webhooks/sales-leads", active: true },
+    { id: "pipeline-1", sourcePath: "/webhooks/order-events", active: true },
   ]);
   const jobStore = new InMemoryJobStore();
   const service = createWebhookService(pipelineStore, jobStore);
 
-  const queuedJob = await service.enqueueWebhook("/webhooks/sales-leads", {
-    leadId: "lead-123",
-    amount: 42,
+  const queuedJob = await service.enqueueWebhook("/webhooks/order-events", {
+    eventId: "evt-123",
+    total: 42,
   });
 
   assert.equal(queuedJob.pipelineId, "pipeline-1");
   assert.equal(queuedJob.status, JobStatus.PENDING);
   assert.deepEqual(jobStore.payloads[0], {
-    leadId: "lead-123",
-    amount: 42,
+    eventId: "evt-123",
+    total: 42,
   });
 });
 
 test("webhook service accepts arbitrary JSON payloads", async () => {
   const pipelineStore = new InMemoryWebhookPipelineStore([
-    { id: "pipeline-1", sourcePath: "/webhooks/sales-leads", active: true },
+    { id: "pipeline-1", sourcePath: "/webhooks/order-events", active: true },
   ]);
   const jobStore = new InMemoryJobStore();
   const service = createWebhookService(pipelineStore, jobStore);
 
-  await service.enqueueWebhook("/webhooks/sales-leads", ["lead-123", true, 5]);
+  await service.enqueueWebhook("/webhooks/order-events", ["evt-123", true, 5]);
 
-  assert.deepEqual(jobStore.payloads[0], ["lead-123", true, 5]);
+  assert.deepEqual(jobStore.payloads[0], ["evt-123", true, 5]);
 });
 
 test("webhook service rejects unknown or inactive source paths", async () => {

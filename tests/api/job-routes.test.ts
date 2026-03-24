@@ -19,19 +19,19 @@ import { NotFoundError } from "../../src/utils/errors.js";
 function createPipelineServiceStub(): PipelineService {
   return {
     async listPipelines() {
-      throw new Error("Not implemented in this test.");
+      throw new Error("Unexpected call in this test.");
     },
     async getPipeline() {
-      throw new Error("Not implemented in this test.");
+      throw new Error("Unexpected call in this test.");
     },
     async createPipeline() {
-      throw new Error("Not implemented in this test.");
+      throw new Error("Unexpected call in this test.");
     },
     async updatePipeline() {
-      throw new Error("Not implemented in this test.");
+      throw new Error("Unexpected call in this test.");
     },
     async deletePipeline() {
-      throw new Error("Not implemented in this test.");
+      throw new Error("Unexpected call in this test.");
     },
   };
 }
@@ -39,7 +39,7 @@ function createPipelineServiceStub(): PipelineService {
 function createWebhookServiceStub(): WebhookService {
   return {
     async enqueueWebhook(): Promise<QueuedJob> {
-      throw new Error("Not implemented in this test.");
+      throw new Error("Unexpected call in this test.");
     },
   };
 }
@@ -81,7 +81,7 @@ function buildJobSummary(overrides: Partial<JobSummary> = {}): JobSummary {
   return {
     id: "job-123",
     pipelineId: "pipeline-123",
-    pipelineName: "Sales Lead Pipeline",
+    pipelineName: "Order Events Pipeline",
     status: JobStatus.COMPLETED,
     retryCount: 1,
     maxRetries: 5,
@@ -98,9 +98,9 @@ function buildJobSummary(overrides: Partial<JobSummary> = {}): JobSummary {
 function buildJobDetails(overrides: Partial<JobDetails> = {}): JobDetails {
   return {
     ...buildJobSummary(),
-    payload: { leadId: "lead-123" },
-    result: { leadId: "lead-123", priority: "high" },
-    pipelineSourcePath: "/webhooks/sales-leads",
+    payload: { eventId: "evt-123", total: 149 },
+    result: { eventId: "evt-123", priority: "high" },
+    pipelineSourcePath: "/webhooks/order-events",
     actionType: "ENRICH",
     pipelineActive: true,
     ...overrides,
@@ -114,7 +114,7 @@ function buildDeliveryAttemptDetails(
     id: "attempt-123",
     jobId: "job-123",
     subscriberId: "subscriber-123",
-    subscriberUrl: "https://example.com/hooks/sales",
+    subscriberUrl: "https://example.com/hooks/orders",
     attemptNumber: 2,
     status: DeliveryStatus.PENDING,
     nextRunAt: new Date("2026-03-24T10:02:00.000Z"),
@@ -213,8 +213,8 @@ test("job routes return job details by id", async () => {
 
       assert.equal(response.status, 200);
       assert.equal(body.data.id, "job-123");
-      assert.equal(body.data.pipelineSourcePath, "/webhooks/sales-leads");
-      assert.deepEqual(body.data.payload, { leadId: "lead-123" });
+      assert.equal(body.data.pipelineSourcePath, "/webhooks/order-events");
+      assert.deepEqual(body.data.payload, { eventId: "evt-123", total: 149 });
     },
   );
 });
@@ -254,7 +254,7 @@ test("job routes return delivery history by job id", async () => {
       const body = await response.json();
 
       assert.equal(response.status, 200);
-      assert.equal(body.data[0].subscriberUrl, "https://example.com/hooks/sales");
+      assert.equal(body.data[0].subscriberUrl, "https://example.com/hooks/orders");
       assert.equal(body.meta.totalItems, 1);
     },
   );

@@ -210,7 +210,7 @@ function buildJobResult(overrides: Partial<StoredJobResult> = {}): StoredJobResu
     id: "job-1",
     pipelineId: "pipeline-1",
     payload: {
-      leadId: "lead-123",
+      eventId: "evt-123",
     },
     ...overrides,
   };
@@ -240,7 +240,7 @@ function buildCompletedJob(overrides: Partial<CompletedJob> = {}): CompletedJob 
     status: "COMPLETED",
     actionStatus: "SUCCESS",
     result: {
-      leadId: "lead-123",
+      eventId: "evt-123",
     },
     processedAt: new Date("2026-03-23T10:05:00.000Z"),
     ...overrides,
@@ -271,7 +271,7 @@ test("subscriber delivery service delivers to active subscribers and records suc
       jobId: "job-1",
       pipelineId: "pipeline-1",
       payload: {
-        leadId: "lead-123",
+        eventId: "evt-123",
       },
     },
     deliveredAt,
@@ -337,7 +337,7 @@ test("subscriber delivery service records failed attempts and schedules retries"
       jobId: "job-1",
       pipelineId: "pipeline-1",
       payload: {
-        leadId: "lead-123",
+        eventId: "evt-123",
       },
     },
     now,
@@ -423,7 +423,7 @@ test("subscriber delivery service skips inactive subscribers", async () => {
     jobId: "job-1",
     pipelineId: "pipeline-1",
     payload: {
-      leadId: "lead-123",
+      eventId: "evt-123",
     },
   });
 

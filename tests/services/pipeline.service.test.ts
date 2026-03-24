@@ -102,20 +102,20 @@ class InMemoryPipelineStore implements PipelineStore {
 
 function buildInput(overrides: Partial<PipelineInput> = {}): PipelineInput {
   return {
-    name: "Inbound sales lead",
-    sourcePath: "/webhooks/sales-leads",
+    name: "Order Events Pipeline",
+    sourcePath: "/webhooks/order-events",
     actionType: "TRANSFORM",
     actionConfig: {
       fields: {
-        leadId: "leadId",
-        email: "contact.email",
-        amount: "amount",
+        eventId: "event.id",
+        customerEmail: "customer.email",
+        total: "total",
       },
     },
     active: true,
     subscribers: [
       {
-        url: "https://example.com/hooks/sales",
+        url: "https://example.com/hooks/orders",
         active: true,
       },
     ],

@@ -146,11 +146,11 @@ function buildStoredJob(overrides: Partial<StoredJob> = {}): StoredJob {
   return {
     id: "job-1",
     pipelineId: "pipeline-1",
-    payload: { leadId: "lead-123" },
+    payload: { eventId: "evt-123" },
     actionType: "TRANSFORM",
     actionConfig: {
       fields: {
-        leadId: "leadId",
+        eventId: "eventId",
       },
     },
     status: JobStatus.PENDING,
@@ -237,13 +237,13 @@ test("job processing service completes a claimed job and stores the action resul
       actionType: "TRANSFORM",
       actionConfig: {
         fields: {
-          leadId: "lead.id",
-          email: "contact.email",
+          eventId: "event.id",
+          customerEmail: "customer.email",
         },
       },
       payload: {
-        lead: { id: "lead-123" },
-        contact: { email: "owner@example.com" },
+        event: { id: "evt-123" },
+        customer: { email: "user@example.com" },
       },
     }),
   ]);
@@ -255,13 +255,13 @@ test("job processing service completes a claimed job and stores the action resul
   assert.equal(processedJob.status, JobStatus.COMPLETED);
   assert.equal(processedJob.actionStatus, "SUCCESS");
   assert.deepEqual(processedJob.result, {
-    leadId: "lead-123",
-    email: "owner@example.com",
+    eventId: "evt-123",
+    customerEmail: "user@example.com",
   });
   assert.equal(store.getJob("job-1")?.status, JobStatus.COMPLETED);
   assert.deepEqual(store.getJob("job-1")?.result, {
-    leadId: "lead-123",
-    email: "owner@example.com",
+    eventId: "evt-123",
+    customerEmail: "user@example.com",
   });
   assert.equal(store.getJob("job-1")?.processedAt?.getTime(), processedAt.getTime());
   assert.equal(store.getJob("job-1")?.lastError, null);
@@ -309,7 +309,7 @@ test("job processing service reschedules a claimed job when an unexpected error 
       actionType: "TRANSFORM",
       actionConfig: actionConfig as unknown as JsonValue,
       payload: {
-        lead: { id: "lead-123" },
+        event: { id: "evt-123" },
       },
     }),
   ]);
@@ -349,7 +349,7 @@ test("job processing service fails a claimed job when retries are exhausted", as
       actionType: "TRANSFORM",
       actionConfig: actionConfig as unknown as JsonValue,
       payload: {
-        lead: { id: "lead-123" },
+        event: { id: "evt-123" },
       },
       retryCount: 2,
       maxRetries: 2,
@@ -377,7 +377,7 @@ test("job processing service fails validation errors without retrying", async ()
       actionType: "TRANSFORM",
       actionConfig: {
         fields: {
-          leadId: "lead.id",
+          eventId: "event.id",
         },
       },
       payload: 42,
