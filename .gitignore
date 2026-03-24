@@ -2,5 +2,7 @@ node_modules
 dist
 .env
 *.log
+*.md
+!README.md
 
 /src/generated/prisma
