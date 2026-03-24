@@ -3,6 +3,7 @@ import { createServer, Server } from "node:http";
 import { AddressInfo } from "node:net";
 import test from "node:test";
 import { createApiApp, ApiDependencies } from "../../src/api/app";
+import { JobQueryService } from "../../src/services/job-query-service";
 import { PipelineService } from "../../src/services/pipeline-service";
 import { QueuedJob } from "../../src/services/webhook-service";
 import { NotFoundError } from "../../src/utils/errors";
@@ -23,6 +24,20 @@ function createPipelineServiceStub(): PipelineService {
       throw new Error("Not implemented in this test.");
     },
     async deletePipeline() {
+      throw new Error("Not implemented in this test.");
+    },
+  };
+}
+
+function createJobQueryServiceStub(): JobQueryService {
+  return {
+    async getJob() {
+      throw new Error("Not implemented in this test.");
+    },
+    async listJobs() {
+      throw new Error("Not implemented in this test.");
+    },
+    async listJobDeliveries() {
       throw new Error("Not implemented in this test.");
     },
   };
@@ -81,6 +96,7 @@ test("webhook route enqueues jobs and returns 202", async () => {
   await withApiServer(
     {
       pipelineService: createPipelineServiceStub(),
+      jobQueryService: createJobQueryServiceStub(),
       webhookService: {
         async enqueueWebhook(sourcePath: string, payload: JsonValue): Promise<QueuedJob> {
           assert.equal(sourcePath, "/webhooks/sales-leads");
@@ -112,6 +128,7 @@ test("webhook route returns 404 for unknown source paths", async () => {
   await withApiServer(
     {
       pipelineService: createPipelineServiceStub(),
+      jobQueryService: createJobQueryServiceStub(),
       webhookService: {
         async enqueueWebhook(): Promise<QueuedJob> {
           throw new NotFoundError("Webhook source /webhooks/missing was not found.");
@@ -140,6 +157,7 @@ test("webhook route rejects empty request bodies", async () => {
   await withApiServer(
     {
       pipelineService: createPipelineServiceStub(),
+      jobQueryService: createJobQueryServiceStub(),
       webhookService: {
         async enqueueWebhook(): Promise<QueuedJob> {
           throw new Error("Should not be called for empty body.");
