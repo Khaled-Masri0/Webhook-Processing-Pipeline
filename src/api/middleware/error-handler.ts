@@ -1,5 +1,5 @@
 import { NextFunction, Request, Response } from "express";
-import { AppError, ValidationError } from "../../utils/errors";
+import { AppError, ValidationError } from "../../utils/errors.js";
 
 interface BodyParserError extends Error {
   type?: string;

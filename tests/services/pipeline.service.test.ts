@@ -6,9 +6,9 @@ import {
   Pipeline,
   PipelineInput,
   PipelineStore,
-} from "../../src/services/pipeline-service";
-import { ConflictError, NotFoundError } from "../../src/utils/errors";
-import { parsePipelineInput } from "../../src/utils/pipeline-validation";
+} from "../../src/services/pipeline-service.js";
+import { ConflictError, NotFoundError } from "../../src/utils/errors.js";
+import { parsePipelineInput } from "../../src/utils/pipeline-validation.js";
 
 class InMemoryPipelineStore implements PipelineStore {
   private readonly pipelines = new Map<string, Pipeline>();

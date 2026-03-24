@@ -3,8 +3,8 @@ import test from "node:test";
 import {
   executePipelineAction,
   parsePipelineActionConfig,
-} from "../../src/services/pipeline-action-service";
-import { ValidationError } from "../../src/utils/errors";
+} from "../../src/services/pipeline-action-service.js";
+import { ValidationError } from "../../src/utils/errors.js";
 
 test("transform action reshapes payload fields into a new object", () => {
   const result = executePipelineAction({

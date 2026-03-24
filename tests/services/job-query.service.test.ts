@@ -10,8 +10,8 @@ import {
   JobQueryStore,
   JobSummary,
   PaginatedResult,
-} from "../../src/services/job-query-service";
-import { NotFoundError } from "../../src/utils/errors";
+} from "../../src/services/job-query-service.js";
+import { NotFoundError } from "../../src/utils/errors.js";
 
 class InMemoryJobQueryStore implements JobQueryStore {
   constructor(

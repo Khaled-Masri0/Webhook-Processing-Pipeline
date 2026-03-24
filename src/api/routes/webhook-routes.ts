@@ -1,7 +1,7 @@
 import { Router } from "express";
-import { ApiDependencies } from "../app";
-import { requireJsonBody } from "../utils/request-body";
-import { asyncRoute } from "../utils/async-route";
+import { ApiDependencies } from "../app.js";
+import { requireJsonBody } from "../utils/request-body.js";
+import { asyncRoute } from "../utils/async-route.js";
 
 export function createWebhookRoutes(dependencies: ApiDependencies): Router {
   const router = Router();

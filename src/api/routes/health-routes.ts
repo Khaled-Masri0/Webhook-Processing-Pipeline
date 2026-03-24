@@ -1,6 +1,6 @@
 import { Router } from "express";
-import { ApiDependencies } from "../app";
-import { asyncRoute } from "../utils/async-route";
+import { ApiDependencies } from "../app.js";
+import { asyncRoute } from "../utils/async-route.js";
 
 export function createHealthRoutes(dependencies: ApiDependencies): Router {
   const router = Router();

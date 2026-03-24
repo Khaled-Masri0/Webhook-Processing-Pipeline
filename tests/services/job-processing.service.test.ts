@@ -6,8 +6,8 @@ import {
   ClaimedJob,
   JobProcessingStore,
   ReadyJob,
-} from "../../src/services/job-processing-service";
-import { JsonValue } from "../../src/utils/json";
+} from "../../src/services/job-processing-service.js";
+import { JsonValue } from "../../src/utils/json.js";
 
 interface StoredJob extends ReadyJob {
   status: JobStatus;

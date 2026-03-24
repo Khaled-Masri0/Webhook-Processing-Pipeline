@@ -1,12 +1,12 @@
-import { env } from "../config/env";
-import { closeDb } from "../db/client";
-import { prismaJobStore } from "../db/job-store";
-import { prismaPipelineStore } from "../db/pipeline-store";
-import { createJobProcessingService } from "../services/job-processing-service";
+import { env } from "../config/env.js";
+import { closeDb } from "../db/client.js";
+import { prismaJobStore } from "../db/job-store.js";
+import { prismaPipelineStore } from "../db/pipeline-store.js";
+import { createJobProcessingService } from "../services/job-processing-service.js";
 import {
   createSubscriberDeliveryService,
   shouldDeliverProcessedJob,
-} from "../services/subscriber-delivery-service";
+} from "../services/subscriber-delivery-service.js";
 
 let timer: NodeJS.Timeout | null = null;
 const jobProcessingService = createJobProcessingService(prismaJobStore);

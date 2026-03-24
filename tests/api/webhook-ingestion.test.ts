@@ -2,12 +2,12 @@ import assert from "node:assert/strict";
 import { createServer, Server } from "node:http";
 import { AddressInfo } from "node:net";
 import test from "node:test";
-import { createApiApp, ApiDependencies } from "../../src/api/app";
-import { JobQueryService } from "../../src/services/job-query-service";
-import { PipelineService } from "../../src/services/pipeline-service";
-import { QueuedJob } from "../../src/services/webhook-service";
-import { NotFoundError } from "../../src/utils/errors";
-import { JsonValue } from "../../src/utils/json";
+import { createApiApp, ApiDependencies } from "../../src/api/app.js";
+import { JobQueryService } from "../../src/services/job-query-service.js";
+import { PipelineService } from "../../src/services/pipeline-service.js";
+import { QueuedJob } from "../../src/services/webhook-service.js";
+import { NotFoundError } from "../../src/utils/errors.js";
+import { JsonValue } from "../../src/utils/json.js";
 
 function createPipelineServiceStub(): PipelineService {
   return {

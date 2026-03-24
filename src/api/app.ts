@@ -1,19 +1,12 @@
 import express, { Express } from "express";
-import { prisma } from "../db/client";
-import { prismaJobStore } from "../db/job-store";
-import { prismaPipelineStore } from "../db/pipeline-store";
-import { createJobQueryService, JobQueryService } from "../services/job-query-service";
-import { createPipelineService, PipelineService } from "../services/pipeline-service";
-import { createWebhookService, WebhookService } from "../services/webhook-service";
-import { errorHandler, notFoundHandler } from "./middleware/error-handler";
-import { createHealthRoutes } from "./routes/health-routes";
-import { createJobRoutes } from "./routes/job-routes";
-import { createPipelineRoutes } from "./routes/pipeline-routes";
-import { createWebhookRoutes } from "./routes/webhook-routes";
-
-const pipelineService = createPipelineService(prismaPipelineStore);
-const webhookService = createWebhookService(prismaPipelineStore, prismaJobStore);
-const jobQueryService = createJobQueryService(prismaJobStore);
+import { JobQueryService } from "../services/job-query-service.js";
+import { PipelineService } from "../services/pipeline-service.js";
+import { WebhookService } from "../services/webhook-service.js";
+import { errorHandler, notFoundHandler } from "./middleware/error-handler.js";
+import { createHealthRoutes } from "./routes/health-routes.js";
+import { createJobRoutes } from "./routes/job-routes.js";
+import { createPipelineRoutes } from "./routes/pipeline-routes.js";
+import { createWebhookRoutes } from "./routes/webhook-routes.js";
 
 export interface ApiDependencies {
   pipelineService: PipelineService;
@@ -22,16 +15,7 @@ export interface ApiDependencies {
   healthcheck: () => Promise<void>;
 }
 
-const defaultApiDependencies: ApiDependencies = {
-  pipelineService,
-  webhookService,
-  jobQueryService,
-  healthcheck: async () => {
-    await prisma.$queryRaw`SELECT 1`;
-  },
-};
-
-export function createApiApp(dependencies: ApiDependencies = defaultApiDependencies): Express {
+export function createApiApp(dependencies: ApiDependencies): Express {
   const app = express();
 
   app.use(express.json({ limit: "1mb", type: "*/*" }));

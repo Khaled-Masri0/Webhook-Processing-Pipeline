@@ -1,8 +1,8 @@
 import { ActionType } from "@prisma/client";
-import { ValidationError } from "./errors";
-import { isJsonObject } from "./json";
-import { parsePipelineActionConfig } from "../services/pipeline-action-service";
-import { PipelineInput, PipelineSubscriberInput } from "../services/pipeline-service";
+import { ValidationError } from "./errors.js";
+import { isJsonObject } from "./json.js";
+import { parsePipelineActionConfig } from "../services/pipeline-action-service.js";
+import { PipelineInput, PipelineSubscriberInput } from "../services/pipeline-service.js";
 
 const VALID_ACTION_TYPES = new Set<ActionType>(["TRANSFORM", "FILTER", "ENRICH"]);
 const VALID_SOURCE_PATH = /^\/[a-zA-Z0-9/_-]+$/;

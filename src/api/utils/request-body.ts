@@ -1,6 +1,6 @@
 import { Request } from "express";
-import { JsonValue } from "../../utils/json";
-import { ValidationError } from "../../utils/errors";
+import { JsonValue } from "../../utils/json.js";
+import { ValidationError } from "../../utils/errors.js";
 
 export function requireJsonBody(request: Request): JsonValue {
   const contentLength = request.headers["content-length"];

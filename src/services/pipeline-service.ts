@@ -1,5 +1,5 @@
 import { ActionType } from "@prisma/client";
-import { NotFoundError } from "../utils/errors";
+import { NotFoundError } from "../utils/errors.js";
 
 export interface PipelineSubscriberInput {
   url: string;

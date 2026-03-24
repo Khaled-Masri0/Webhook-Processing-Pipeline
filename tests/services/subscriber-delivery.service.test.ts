@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { DeliveryStatus } from "@prisma/client";
-import { CompletedJob } from "../../src/services/job-processing-service";
+import { CompletedJob } from "../../src/services/job-processing-service.js";
 import {
   createSubscriberDeliveryService,
   DeliveryAttemptInput,
@@ -12,8 +12,8 @@ import {
   DeliverySubscriberStore,
   PendingDeliveryAttempt,
   shouldDeliverProcessedJob,
-} from "../../src/services/subscriber-delivery-service";
-import { JsonValue } from "../../src/utils/json";
+} from "../../src/services/subscriber-delivery-service.js";
+import { JsonValue } from "../../src/utils/json.js";
 
 interface StoredSubscriber extends DeliverySubscriber {
   pipelineId: string;

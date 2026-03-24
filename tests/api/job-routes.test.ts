@@ -3,7 +3,7 @@ import { createServer, Server } from "node:http";
 import { AddressInfo } from "node:net";
 import test from "node:test";
 import { DeliveryStatus, JobStatus } from "@prisma/client";
-import { ApiDependencies, createApiApp } from "../../src/api/app";
+import { ApiDependencies, createApiApp } from "../../src/api/app.js";
 import {
   DeliveryAttemptDetails,
   JobDetails,
@@ -11,10 +11,10 @@ import {
   JobQueryService,
   JobSummary,
   PaginatedResult,
-} from "../../src/services/job-query-service";
-import { PipelineService } from "../../src/services/pipeline-service";
-import { QueuedJob, WebhookService } from "../../src/services/webhook-service";
-import { NotFoundError } from "../../src/utils/errors";
+} from "../../src/services/job-query-service.js";
+import { PipelineService } from "../../src/services/pipeline-service.js";
+import { QueuedJob, WebhookService } from "../../src/services/webhook-service.js";
+import { NotFoundError } from "../../src/utils/errors.js";
 
 function createPipelineServiceStub(): PipelineService {
   return {

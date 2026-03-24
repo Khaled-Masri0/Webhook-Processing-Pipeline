@@ -8,9 +8,9 @@ import {
   QueuedJob,
   WebhookPipeline,
   WebhookPipelineStore,
-} from "../../src/services/webhook-service";
-import { NotFoundError } from "../../src/utils/errors";
-import { JsonValue } from "../../src/utils/json";
+} from "../../src/services/webhook-service.js";
+import { NotFoundError } from "../../src/utils/errors.js";
+import { JsonValue } from "../../src/utils/json.js";
 
 class InMemoryWebhookPipelineStore implements WebhookPipelineStore {
   constructor(private readonly pipelines: WebhookPipeline[]) {}

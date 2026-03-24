@@ -1,13 +1,13 @@
 import { DeliveryStatus, JobStatus } from "@prisma/client";
 import { Request, Router } from "express";
-import { ApiDependencies } from "../app";
+import { ApiDependencies } from "../app.js";
 import {
   DeliveryHistoryQuery,
   JobHistoryQuery,
   PaginationInput,
-} from "../../services/job-query-service";
-import { ValidationError } from "../../utils/errors";
-import { asyncRoute } from "../utils/async-route";
+} from "../../services/job-query-service.js";
+import { ValidationError } from "../../utils/errors.js";
+import { asyncRoute } from "../utils/async-route.js";
 
 const DEFAULT_PAGE = 1;
 const DEFAULT_PAGE_SIZE = 20;
