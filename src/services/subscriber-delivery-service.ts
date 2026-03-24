@@ -1,6 +1,6 @@
 import { DeliveryStatus } from "@prisma/client";
-import { CompletedJob } from "./job-processing-service";
-import { JsonValue } from "../utils/json";
+import { CompletedJob } from "./job-processing-service.js";
+import { JsonValue } from "../utils/json.js";
 
 export interface DeliverySubscriber {
   id: string;

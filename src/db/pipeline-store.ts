@@ -1,9 +1,12 @@
 import { Pipeline as PrismaPipeline, Prisma, Subscriber as PrismaSubscriber } from "@prisma/client";
-import { prisma } from "./client";
-import { ConflictError } from "../utils/errors";
-import { Pipeline, PipelineInput, PipelineStore } from "../services/pipeline-service";
-import { DeliverySubscriber, DeliverySubscriberStore } from "../services/subscriber-delivery-service";
-import { WebhookPipeline, WebhookPipelineStore } from "../services/webhook-service";
+import { prisma } from "./client.js";
+import { ConflictError } from "../utils/errors.js";
+import { Pipeline, PipelineInput, PipelineStore } from "../services/pipeline-service.js";
+import {
+  DeliverySubscriber,
+  DeliverySubscriberStore,
+} from "../services/subscriber-delivery-service.js";
+import { WebhookPipeline, WebhookPipelineStore } from "../services/webhook-service.js";
 
 type PipelineRecord = PrismaPipeline & { subscribers: PrismaSubscriber[] };
 

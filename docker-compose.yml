@@ -16,5 +16,43 @@ services:
       timeout: 3s
       retries: 10
 
+  api:
+    build:
+      context: .
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://user:password@db:5432/webhook_pipeline?schema=public
+      PORT: 3000
+      WORKER_POLL_MS: 5000
+    ports:
+      - "3000:3000"
+    command:
+      [
+        "sh",
+        "-c",
+        "until npm run prisma:deploy; do echo 'Waiting for database migrations...' && sleep 2; done && node dist/api/index.js",
+      ]
+
+  worker:
+    build:
+      context: .
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://user:password@db:5432/webhook_pipeline?schema=public
+      PORT: 3000
+      WORKER_POLL_MS: 5000
+    command:
+      [
+        "sh",
+        "-c",
+        "until npm run prisma:deploy; do echo 'Waiting for database migrations...' && sleep 2; done && node dist/worker/index.js",
+      ]
+
 volumes:
   postgres_data:

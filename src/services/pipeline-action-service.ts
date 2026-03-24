@@ -1,6 +1,12 @@
 import { ActionType } from "@prisma/client";
-import { ValidationError } from "../utils/errors";
-import { isJsonObject, isJsonValue, JsonObject, JsonPrimitive, JsonValue } from "../utils/json";
+import { ValidationError } from "../utils/errors.js";
+import {
+  isJsonObject,
+  isJsonValue,
+  JsonObject,
+  JsonPrimitive,
+  JsonValue,
+} from "../utils/json.js";
 
 const VALID_PATH = /^[a-zA-Z0-9_-]+(?:\.[a-zA-Z0-9_-]+)*$/;
 const VALID_OUTPUT_FIELD = /^[a-zA-Z0-9_-]+$/;

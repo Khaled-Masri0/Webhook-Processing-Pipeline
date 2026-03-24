@@ -1,5 +1,5 @@
 import { ActionType, DeliveryStatus, JobStatus, Prisma } from "@prisma/client";
-import { prisma } from "./client";
+import { prisma } from "./client.js";
 import {
   DeliveryAttemptDetails,
   DeliveryHistoryQuery,
@@ -8,15 +8,15 @@ import {
   JobQueryStore,
   JobSummary,
   PaginatedResult,
-} from "../services/job-query-service";
+} from "../services/job-query-service.js";
 import {
   DeliveryAttemptInput,
   DeliveryAttemptStore,
   PendingDeliveryAttempt,
-} from "../services/subscriber-delivery-service";
-import { EnqueueJobInput, JobStore, QueuedJob } from "../services/webhook-service";
-import { JobProcessingStore, ReadyJob } from "../services/job-processing-service";
-import { JsonValue } from "../utils/json";
+} from "../services/subscriber-delivery-service.js";
+import { EnqueueJobInput, JobStore, QueuedJob } from "../services/webhook-service.js";
+import { JobProcessingStore, ReadyJob } from "../services/job-processing-service.js";
+import { JsonValue } from "../utils/json.js";
 
 const jobListInclude = {
   pipeline: {

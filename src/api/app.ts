@@ -1,15 +1,15 @@
 import express, { Express } from "express";
-import { prisma } from "../db/client";
-import { prismaJobStore } from "../db/job-store";
-import { prismaPipelineStore } from "../db/pipeline-store";
-import { createJobQueryService, JobQueryService } from "../services/job-query-service";
-import { createPipelineService, PipelineService } from "../services/pipeline-service";
-import { createWebhookService, WebhookService } from "../services/webhook-service";
-import { errorHandler, notFoundHandler } from "./middleware/error-handler";
-import { createHealthRoutes } from "./routes/health-routes";
-import { createJobRoutes } from "./routes/job-routes";
-import { createPipelineRoutes } from "./routes/pipeline-routes";
-import { createWebhookRoutes } from "./routes/webhook-routes";
+import { prisma } from "../db/client.js";
+import { prismaJobStore } from "../db/job-store.js";
+import { prismaPipelineStore } from "../db/pipeline-store.js";
+import { createJobQueryService, JobQueryService } from "../services/job-query-service.js";
+import { createPipelineService, PipelineService } from "../services/pipeline-service.js";
+import { createWebhookService, WebhookService } from "../services/webhook-service.js";
+import { errorHandler, notFoundHandler } from "./middleware/error-handler.js";
+import { createHealthRoutes } from "./routes/health-routes.js";
+import { createJobRoutes } from "./routes/job-routes.js";
+import { createPipelineRoutes } from "./routes/pipeline-routes.js";
+import { createWebhookRoutes } from "./routes/webhook-routes.js";
 
 const pipelineService = createPipelineService(prismaPipelineStore);
 const webhookService = createWebhookService(prismaPipelineStore, prismaJobStore);

@@ -1,7 +1,10 @@
 import { ActionType, JobStatus } from "@prisma/client";
-import { executePipelineAction, PipelineActionExecutionResult } from "./pipeline-action-service";
-import { ValidationError } from "../utils/errors";
-import { JsonValue } from "../utils/json";
+import {
+  executePipelineAction,
+  PipelineActionExecutionResult,
+} from "./pipeline-action-service.js";
+import { ValidationError } from "../utils/errors.js";
+import { JsonValue } from "../utils/json.js";
 
 export interface ReadyJob {
   id: string;
@@ -107,7 +110,7 @@ export function createJobProcessingService(store: JobProcessingStore): JobProces
           const rescheduled = await store.rescheduleJob(job.id, lastError, nextRunAt, retryCount);
 
           if (!rescheduled) {
-            throw new Error(`Job ${job.id} could not be rescheduled.`);
+            throw new Error(`Job ${job.id} could not be rescheduled.`, { cause: error });
           }
 
           return {
@@ -123,7 +126,7 @@ export function createJobProcessingService(store: JobProcessingStore): JobProces
         const markedFailed = await store.markJobFailed(job.id, lastError, now);
 
         if (!markedFailed) {
-          throw new Error(`Job ${job.id} could not be marked failed.`);
+          throw new Error(`Job ${job.id} could not be marked failed.`, { cause: error });
         }
 
         return {

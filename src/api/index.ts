@@ -1,7 +1,8 @@
 import { createServer } from "node:http";
-import { env } from "../config/env";
-import { closeDb } from "../db/client";
-import { createApiApp } from "./app";
+import { pathToFileURL } from "node:url";
+import { env } from "../config/env.js";
+import { closeDb } from "../db/client.js";
+import { createApiApp } from "./app.js";
 
 export function createApiServer() {
   return createServer(createApiApp());
@@ -17,7 +18,10 @@ async function shutdown(signal: string): Promise<void> {
   });
 }
 
-if (require.main === module) {
+const isDirectExecution =
+  process.argv[1] !== undefined && import.meta.url === pathToFileURL(process.argv[1]).href;
+
+if (isDirectExecution) {
   process.on("SIGINT", () => void shutdown("SIGINT"));
   process.on("SIGTERM", () => void shutdown("SIGTERM"));
 

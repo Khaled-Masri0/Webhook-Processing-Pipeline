@@ -1,9 +1,9 @@
 import { Router } from "express";
-import { ApiDependencies } from "../app";
-import { requireJsonBody } from "../utils/request-body";
-import { asyncRoute } from "../utils/async-route";
-import { ValidationError } from "../../utils/errors";
-import { parsePipelineInput } from "../../utils/pipeline-validation";
+import { ApiDependencies } from "../app.js";
+import { requireJsonBody } from "../utils/request-body.js";
+import { asyncRoute } from "../utils/async-route.js";
+import { ValidationError } from "../../utils/errors.js";
+import { parsePipelineInput } from "../../utils/pipeline-validation.js";
 
 export function createPipelineRoutes(dependencies: ApiDependencies): Router {
   const router = Router();

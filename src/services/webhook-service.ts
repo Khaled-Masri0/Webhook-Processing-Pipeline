@@ -1,6 +1,6 @@
 import { JobStatus } from "@prisma/client";
-import { NotFoundError } from "../utils/errors";
-import { JsonValue } from "../utils/json";
+import { NotFoundError } from "../utils/errors.js";
+import { JsonValue } from "../utils/json.js";
 
 export interface WebhookPipeline {
   id: string;
