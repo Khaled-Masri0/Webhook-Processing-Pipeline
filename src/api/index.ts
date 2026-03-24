@@ -3,10 +3,13 @@ import { pathToFileURL } from "node:url";
 import { env } from "../config/env.js";
 import { closeDb } from "../db/client.js";
 import { createApiApp } from "./app.js";
+import { createDefaultApiDependencies } from "./default-dependencies.js";
 
 export function createApiServer() {
-  return createServer(createApiApp());
-}
+    const dependencies = createDefaultApiDependencies();
+    const app = createApiApp(dependencies);
+    return createServer(app);
+  }
 
 const server = createApiServer();
 
