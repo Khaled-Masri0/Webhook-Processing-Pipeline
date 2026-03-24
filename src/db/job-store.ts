@@ -1,5 +1,14 @@
-import { DeliveryStatus, JobStatus, Prisma } from "@prisma/client";
+import { ActionType, DeliveryStatus, JobStatus, Prisma } from "@prisma/client";
 import { prisma } from "./client";
+import {
+  DeliveryAttemptDetails,
+  DeliveryHistoryQuery,
+  JobDetails,
+  JobHistoryQuery,
+  JobQueryStore,
+  JobSummary,
+  PaginatedResult,
+} from "../services/job-query-service";
 import {
   DeliveryAttemptInput,
   DeliveryAttemptStore,
@@ -9,7 +18,26 @@ import { EnqueueJobInput, JobStore, QueuedJob } from "../services/webhook-servic
 import { JobProcessingStore, ReadyJob } from "../services/job-processing-service";
 import { JsonValue } from "../utils/json";
 
-class PrismaJobStore implements JobStore, JobProcessingStore, DeliveryAttemptStore {
+const jobListInclude = {
+  pipeline: {
+    select: {
+      name: true,
+      sourcePath: true,
+      actionType: true,
+      active: true,
+    },
+  },
+} satisfies Prisma.JobInclude;
+
+const deliveryAttemptInclude = {
+  subscriber: {
+    select: {
+      url: true,
+    },
+  },
+} satisfies Prisma.DeliveryAttemptInclude;
+
+class PrismaJobStore implements JobStore, JobProcessingStore, DeliveryAttemptStore, JobQueryStore {
   async create(input: EnqueueJobInput): Promise<QueuedJob> {
     const job = await prisma.job.create({
       data: {
@@ -260,6 +288,69 @@ class PrismaJobStore implements JobStore, JobProcessingStore, DeliveryAttemptSto
 
     return update.count === 1;
   }
+
+  async findJobById(id: string): Promise<JobDetails | null> {
+    const job = await prisma.job.findUnique({
+      where: { id },
+      include: jobListInclude,
+    });
+
+    return job ? mapJobDetails(job) : null;
+  }
+
+  async listJobs(query: JobHistoryQuery): Promise<PaginatedResult<JobSummary>> {
+    const where = buildJobHistoryWhere(query);
+    const skip = (query.page - 1) * query.pageSize;
+
+    const [items, totalItems] = await prisma.$transaction([
+      prisma.job.findMany({
+        where,
+        include: jobListInclude,
+        orderBy: {
+          createdAt: "desc",
+        },
+        skip,
+        take: query.pageSize,
+      }),
+      prisma.job.count({ where }),
+    ]);
+
+    return buildPaginatedResult(
+      items.map(mapJobSummary),
+      query.page,
+      query.pageSize,
+      totalItems,
+    );
+  }
+
+  async listDeliveryAttempts(
+    jobId: string,
+    query: DeliveryHistoryQuery,
+  ): Promise<PaginatedResult<DeliveryAttemptDetails>> {
+    const where: Prisma.DeliveryAttemptWhereInput = {
+      jobId,
+      ...(query.status ? { status: query.status } : {}),
+    };
+    const skip = (query.page - 1) * query.pageSize;
+
+    const [items, totalItems] = await prisma.$transaction([
+      prisma.deliveryAttempt.findMany({
+        where,
+        include: deliveryAttemptInclude,
+        orderBy: [{ createdAt: "asc" }, { attemptNumber: "asc" }],
+        skip,
+        take: query.pageSize,
+      }),
+      prisma.deliveryAttempt.count({ where }),
+    ]);
+
+    return buildPaginatedResult(
+      items.map(mapDeliveryAttemptDetails),
+      query.page,
+      query.pageSize,
+      totalItems,
+    );
+  }
 }
 
 export const prismaJobStore = new PrismaJobStore();
@@ -281,5 +372,141 @@ function mapQueuedJob(job: {
     maxRetries: job.maxRetries,
     nextRunAt: job.nextRunAt,
     createdAt: job.createdAt,
+  };
+}
+
+function buildJobHistoryWhere(query: JobHistoryQuery): Prisma.JobWhereInput {
+  return {
+    ...(query.pipelineId ? { pipelineId: query.pipelineId } : {}),
+    ...(query.status ? { status: query.status } : {}),
+    ...buildCreatedAtRange(query.createdAfter, query.createdBefore),
+  };
+}
+
+function buildCreatedAtRange(
+  createdAfter?: Date,
+  createdBefore?: Date,
+): Prisma.JobWhereInput {
+  if (!createdAfter && !createdBefore) {
+    return {};
+  }
+
+  return {
+    createdAt: {
+      ...(createdAfter ? { gte: createdAfter } : {}),
+      ...(createdBefore ? { lte: createdBefore } : {}),
+    },
+  };
+}
+
+function buildPaginatedResult<T>(
+  items: T[],
+  page: number,
+  pageSize: number,
+  totalItems: number,
+): PaginatedResult<T> {
+  const totalPages = totalItems === 0 ? 0 : Math.ceil(totalItems / pageSize);
+
+  return {
+    items,
+    page,
+    pageSize,
+    totalItems,
+    totalPages,
+  };
+}
+
+function mapJobSummary(job: {
+  id: string;
+  pipelineId: string;
+  status: JobStatus;
+  retryCount: number;
+  maxRetries: number;
+  nextRunAt: Date;
+  lockedAt: Date | null;
+  processedAt: Date | null;
+  lastError: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+  pipeline: {
+    name: string;
+  };
+}): JobSummary {
+  return {
+    id: job.id,
+    pipelineId: job.pipelineId,
+    pipelineName: job.pipeline.name,
+    status: job.status,
+    retryCount: job.retryCount,
+    maxRetries: job.maxRetries,
+    nextRunAt: job.nextRunAt,
+    lockedAt: job.lockedAt,
+    processedAt: job.processedAt,
+    lastError: job.lastError,
+    createdAt: job.createdAt,
+    updatedAt: job.updatedAt,
+  };
+}
+
+function mapJobDetails(job: {
+  id: string;
+  pipelineId: string;
+  payload: Prisma.JsonValue;
+  result: Prisma.JsonValue | null;
+  status: JobStatus;
+  retryCount: number;
+  maxRetries: number;
+  nextRunAt: Date;
+  lockedAt: Date | null;
+  processedAt: Date | null;
+  lastError: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+  pipeline: {
+    name: string;
+    sourcePath: string;
+    actionType: ActionType;
+    active: boolean;
+  };
+}): JobDetails {
+  return {
+    ...mapJobSummary(job),
+    payload: job.payload as JsonValue,
+    result: job.result as JsonValue | null,
+    pipelineSourcePath: job.pipeline.sourcePath,
+    actionType: job.pipeline.actionType,
+    pipelineActive: job.pipeline.active,
+  };
+}
+
+function mapDeliveryAttemptDetails(attempt: {
+  id: string;
+  jobId: string;
+  subscriberId: string;
+  attemptNumber: number;
+  status: DeliveryStatus;
+  nextRunAt: Date;
+  lockedAt: Date | null;
+  responseCode: number | null;
+  error: string | null;
+  deliveredAt: Date | null;
+  createdAt: Date;
+  subscriber: {
+    url: string;
+  };
+}): DeliveryAttemptDetails {
+  return {
+    id: attempt.id,
+    jobId: attempt.jobId,
+    subscriberId: attempt.subscriberId,
+    subscriberUrl: attempt.subscriber.url,
+    attemptNumber: attempt.attemptNumber,
+    status: attempt.status,
+    nextRunAt: attempt.nextRunAt,
+    lockedAt: attempt.lockedAt,
+    responseCode: attempt.responseCode,
+    error: attempt.error,
+    deliveredAt: attempt.deliveredAt,
+    createdAt: attempt.createdAt,
   };
 }
